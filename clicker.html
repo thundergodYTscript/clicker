@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Tycoon Clicker - Pro Edition</title>
+    <style>
+        body { 
+            background: #1e1e24; 
+            color: #fff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .game-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #2a2a35;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #moneyDisplay {
+            font-size: 42px;
+            color: #4caf50;
+            margin: 10px 0 5px 0;
+            font-weight: bold;
+        }
+        #mpsDisplay {
+            font-size: 18px;
+            color: #b1b1bc;
+            margin-bottom: 25px;
+        }
+        #clickBtn { 
+            background: #4caf50; 
+            border: none; 
+            padding: 25px 50px; 
+            font-size: 26px; 
+            color: white; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            box-shadow: 0 6px #2e7d32; 
+            transition: all 0.1s ease;
+            width: 80%;
+            margin-bottom: 20px;
+        }
+        #clickBtn:active { 
+            box-shadow: 0 2px #2e7d32; 
+            transform: translateY(4px); 
+        }
+        #adBtn { 
+            background: #ff9800; 
+            border: none; 
+            padding: 15px 30px; 
+            font-size: 16px;
+            color: white; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin: 15px 0 30px 0; 
+            font-weight: bold;
+            box-shadow: 0 4px #e65100;
+            transition: all 0.1s ease;
+        }
+        #adBtn:active {
+            box-shadow: 0 1px #e65100;
+            transform: translateY(3px);
+        }
+        .upgrades-section {
+            text-align: left;
+            margin-top: 30px;
+            border-top: 1px solid #3e3e4f;
+            padding-top: 20px;
+        }
+        .upgrade-btn { 
+            background: #2196f3; 
+            border: none; 
+            padding: 15px 20px; 
+            color: white; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin: 8px 0; 
+            width: 100%;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px #1565c0;
+        }
+        .upgrade-btn:active:not(.disabled) {
+            box-shadow: 0 1px #1565c0;
+            transform: translateY(3px);
+        }
+        .upgrade-btn span {
+            font-weight: bold;
+        }
+        .disabled { 
+            background: #444452 !important; 
+            box-shadow: none !important;
+            color: #888899;
+            cursor: not-allowed; 
+        }
+        .stats-panel {
+            background: #18181f;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 25px;
+            font-size: 13px;
+            color: #a0a0ab;
+            text-align: left;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Cash Tycoon Clicker</h1>
+        <div id="moneyDisplay">Balance: $0</div>
+        <div id="mpsDisplay">Earnings per second: $0</div>
+        
+        <button id="clickBtn">CLICK FOR CASH</button>
+        <br>
+        
+        <!-- Premium Ad Network Integration Button -->
+        <button id="adBtn" onclick="showRealAd()">📺 Watch Ad for +$1,000 Bonus Cash</button>
+        
+        <div class="upgrades-section">
+            <h3>Corporate Upgrades</h3>
+            <div id="upgradesContainer"></div>
+        </div>
+
+        <div class="stats-panel">
+            <h4 style="margin: 0 0 10px 0; color: #fff;">Stat Ledger</h4>
+            <div class="stats-row"><span>Total Manual Clicks:</span><span id="statClicks">0</span></div>
+            <div class="stats-row"><span>Total Passive Earned:</span><span id="statPassive">0</span></div>
+            <div class="stats-row"><span>Time Active:</span><span id="statTime">0s</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Core Gameplay Data
+        let money = 0;
+        let moneyPerSecond = 0;
+        
+        // Ledger Analytics
+        let totalClicks = 0;
+        let totalPassiveEarned = 0;
+        let timeElapsed = 0;
+
+        // Multi-tier Upgrade Configuration
+        const upgrades = [
+            { id: 'intern', name: 'Hire Intern', cost: 15, mps: 1, count: 0 },
+            { id: 'bot', name: 'Buy AI Bot', cost: 100, mps: 5, count: 0 },
+            { id: 'manager', name: 'Appoint Manager', cost: 500, mps: 25, count: 0 },
+            { id: 'server', name: 'Deploy Server Farm', cost: 3000, mps: 150, count: 0 },
+            { id: 'quantum', name: 'Quantum Core System', cost: 25000, mps: 1200, count: 0 }
+        ];
+
+        const moneyDisplay = document.getElementById('moneyDisplay');
+        const mpsDisplay = document.getElementById('mpsDisplay');
+        const upgradesContainer = document.getElementById('upgradesContainer');
+        
+        const statClicks = document.getElementById('statClicks');
+        const statPassive = document.getElementById('statPassive');
+        const statTime = document.getElementById('statTime');
+
+        // Dynamically build upgrade elements matching the previous clean structure
+        function buildUpgradesMenu() {
+            upgradesContainer.innerHTML = '';
+            upgrades.forEach((item, index) => {
+                const btn = document.createElement('button');
+                btn.id = `btn-${item.id}`;
+                btn.className = "upgrade-btn disabled";
+                btn.onclick = () => buyUpgrade(index);
+                btn.innerHTML = `
+                    <span>${item.name} (${item.count}) [+$${item.mps}/sec]</span>
+                    <strong>Cost: $${Math.floor(item.cost)}</strong>
+                `;
+                upgradesContainer.appendChild(btn);
+            });
+        }
+
+        function updateUI() {
+            moneyDisplay.innerText = `Balance: $${Math.floor(money).toLocaleString()}`;
+            mpsDisplay.innerText = `Earnings per second: $${moneyPerSecond.toLocaleString()}`;
+            
+            // Sync ledger data
+            statClicks.innerText = totalClicks.toLocaleString();
+            statPassive.innerText = Math.floor(totalPassiveEarned).toLocaleString();
+            statTime.innerText = timeElapsed + 's';
+            
+            // Dynamically manage disabled/enabled classes based on wallet
+            upgrades.forEach(item => {
+                const button = document.getElementById(`btn-${item.id}`);
+                if (money >= item.cost) {
+                    button.classList.remove('disabled');
+                } else {
+                    button.classList.add('disabled');
+                }
+            });
+        }
+
+        // Click Action
+        document.getElementById('clickBtn').addEventListener('click', () => {
+            money += 1;
+            totalClicks += 1;
+            updateUI();
+        });
+
+        // Upgrade Purchasing Logic
+        function buyUpgrade(index) {
+            let item = upgrades[index];
+            if (money >= item.cost) {
+                money -= item.cost;
+                item.count++;
+                item.cost = Math.floor(item.cost * 1.4); // Cost multiplier scaling
+                
+                recalculateMps();
+                buildUpgradesMenu();
+                updateUI();
+            }
+        }
+
+        function recalculateMps() {
+            moneyPerSecond = 0;
+            upgrades.forEach(item => {
+                moneyPerSecond += (item.count * item.mps);
+            });
+        }
+
+        // Ad Script Activation Trigger
+        function showRealAd() {
+            // Reward the user in the game immediately
+            money += 1000;
+            updateUI();
+
+            // Open the real external ad script wallet window
+            // Replace the link inside the quotes with your true Monetag or Adsterra direct monetization tracking URL
+            window.open("https://example-ad-network-link.com", "_blank");
+        }
+
+        // Smooth 100ms passive income ticker loop
+        setInterval(() => {
+            if (moneyPerSecond > 0) {
+                let generated = moneyPerSecond / 10;
+                money += generated;
+                totalPassiveEarned += generated;
+            }
+            updateUI();
+        }, 100);
+
+        // Track time duration
+        setInterval(() => {
+            timeElapsed++;
+        }, 1000);
+
+        // Start Assembly
+        buildUpgradesMenu();
+        updateUI();
+    </script>
+</body>
+</html>
